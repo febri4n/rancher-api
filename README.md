@@ -197,9 +197,9 @@ curl -X POST \
   | jq -r '.config' > kubeconfig.yaml
 ```
 ### Mendapatkan list etcdSnapshot
-```json
+```bash
 curl -s -X GET \
-  "https://example.com/v1/rke.cattle.io.etcdsnapshots" \
+  "https://rancher-staging.febri4n.my.id/v1/rke.cattle.io.etcdsnapshots" \
   -H "Authorization: Bearer <Token_Rancher>" \
   | jq -r --arg CLUSTER "<Cluster_Name>" '
     ("FULL_ID\tSNAPSHOT_NAME\tCLUSTER\tNODE\tCREATED_AT\tSIZE_MB\tSTATUS\tSTORAGE_TYPE"),
