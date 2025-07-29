@@ -196,7 +196,7 @@ curl -X POST \
   -H 'Accept: application/json' \
   | jq -r '.config' > kubeconfig.yaml
 ```
-### Mendapatkan list etcdSnapshot
+## Mendapatkan list etcdSnapshot
 ```bash
 curl -s -X GET \
   "https://example.com/v1/rke.cattle.io.etcdsnapshots" \
@@ -208,4 +208,66 @@ curl -s -X GET \
       .snapshotFile.size / (1024*1024) | floor)\t\(.snapshotFile.status)\t\(
       .metadata.annotations."etcdsnapshot.rke.io/storage")")' \
   | column -t -s $'\t'
+```
+## Melakukan upgrade cluster (kubernetes version)
+- Untuk upgrade version butuh resourceVersion, lihat disini field nya
+  https://example.com/v1/provisioning.cattle.io.clusters/fleet-default/<Nama_Cluster>
+- Tambahkan field resourceVersion pada file json yang sudah dibuat
+- Ganti value field kubernetesVersion ke versi terbaru yang tersedia di rancher
+```bash
+{
+  "type": "provisioning.cattle.io.cluster",
+  "metadata": {
+    "name": "febri4n-rke2-api-to-s3",
+    "namespace": "fleet-default",
+    "resourceVersion": "88180447", // Tambahkan field ini
+    "labels": {
+      "provider.cattle.io": "rke2"
+    }
+  },
+  "spec": {
+    "kubernetesVersion": "v1.31.9+rke2r1", // Ubah dengan versi yg tersedia di rancher
+    "rkeConfig": {
+      "machineGlobalConfig": {
+        "cni": "canal",
+        "disable": ["rke2-ingress-nginx"],
+        "disable-kube-proxy": false,
+        "etcd-expose-metrics": false
+      },
+      "etcd": {
+        "snapshotRetention": 7,
+        "snapshotScheduleCron": "*/30 * * * *",
+        "s3": {
+          "cloudCredentialName": "cattle-global-data:cc-rdlxz",
+          "bucket": "rancher-etcd-downstream", 
+          "folder": "cluster-rke2", 
+          "region": "jbbk", 
+          "endpoint": "s3-jbbk.example.co.id", 
+          "skipSSLVerify": false
+        }
+      },
+      "upgradeStrategy": {
+        "controlPlaneConcurrency": "1",
+        "workerConcurrency": "1",
+        "controlPlaneDrainOptions": {
+          "enabled": false,
+          "force": false,
+          "gracePeriod": -1
+        },
+        "workerDrainOptions": {
+          "enabled": false,
+          "force": false,
+          "gracePeriod": -1
+        }
+      }
+    }
+  }
+}
+```
+```bash
+curl -X PUT \
+  'https://example.com/v1/provisioning.cattle.io.clusters/fleet-default/<Nama_Cluster>' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <Token_Rancher>' \
+  --data-binary @upgrade-cluster-k3s.json
 ```
