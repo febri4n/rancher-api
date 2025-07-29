@@ -196,3 +196,16 @@ curl -X POST \
   -H 'Accept: application/json' \
   | jq -r '.config' > kubeconfig.yaml
 ```
+### Mendapatkan list etcdSnapshot
+```json
+curl -s -X GET \
+  "https://example.com/v1/rke.cattle.io.etcdsnapshots" \
+  -H "Authorization: Bearer <Token_Rancher>" \
+  | jq -r --arg CLUSTER "<Cluster_Name>" '
+    ("FULL_ID\tSNAPSHOT_NAME\tCLUSTER\tNODE\tCREATED_AT\tSIZE_MB\tSTATUS\tSTORAGE_TYPE"),
+    (.data[] | select(.spec.clusterName == $CLUSTER) | 
+    "\(.metadata.namespace)/\(.metadata.name)\t\(.metadata.annotations."rke.cattle.io/snapshot-name" // .metadata.name)\t\(.spec.clusterName)\t\(.snapshotFile.nodeName)\t\(.snapshotFile.createdAt)\t\(
+      .snapshotFile.size / (1024*1024) | floor)\t\(.snapshotFile.status)\t\(
+      .metadata.annotations."etcdsnapshot.rke.io/storage")")' \
+  | column -t -s $'\t'
+```
